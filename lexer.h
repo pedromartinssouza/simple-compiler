@@ -1,47 +1,12 @@
+#ifndef LEXER_H
+#define LEXER_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <regex.h>
 #include <string.h> 
+#include "tokens.h"
 
-enum Tokens {
-    INVALID_TOKEN = -1,
-    TOKEN_INT,
-    TOKEN_MAIN,
-    TOKEN_LPAREN,
-    TOKEN_RPAREN,
-    TOKEN_LBRACE,
-    TOKEN_RBRACE,
-    TOKEN_RETURN,
-    TOKEN_NUMBER,
-    TOKEN_SEMICOLON
-};
-
-typedef struct {
-    int token_type;
-    const char *regex;
-} lex_token;
-
-typedef struct {
-    lex_token *token_list;
-    int size;
-} lex_token_list;
-
-lex_token invalid_token = {INVALID_TOKEN, ""};
-
-lex_token single_char_tokens[] = {
-    {TOKEN_LPAREN, "("},
-    {TOKEN_RPAREN, ")"},
-    {TOKEN_LBRACE, "{"},
-    {TOKEN_RBRACE, "}"},
-    {TOKEN_SEMICOLON, ";"}
-};
-
-lex_token token_regex_relation[] = {
-    {TOKEN_INT, "int"},
-    {TOKEN_MAIN, "main"},
-    {TOKEN_RETURN, "return"},
-    {TOKEN_NUMBER, "[0-9]+"},
-};
 
 lex_token is_single_char_token(char c) {
     for (int i = 0; i < sizeof(single_char_tokens) / sizeof(lex_token); i++) {
@@ -70,6 +35,9 @@ lex_token is_token(char *word, int word_size) {
         regcomp(&regex, token.regex, REG_EXTENDED);
         int match = regexec(&regex, temp_word, 0, NULL, 0);
         if (match == 0) {
+            if (token.value == NULL) {
+                token.value = temp_word;
+            }
             return token;
         }
     }
@@ -155,15 +123,4 @@ lex_token_list *get_tokens_in_file(char *file_name) {
     return tokens_used;
 }
 
-int main(void) {
-    lex_token_list *tokens_used = get_tokens_in_file("return_2.c");
-    printf("RESULT\n[");
-    for (int i = 0; i < tokens_used->size; i++) {
-        printf("%d", tokens_used->token_list[i].token_type);
-        if (i != tokens_used->size - 1) {
-            printf(", ");
-        }
-    }
-    printf("]\n");
-    return 0;
-}
+#endif
