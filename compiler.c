@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "lexer.h"
 #include "parser.h"
+#include "translator.h"
 
 
 int main(void) {
@@ -21,7 +22,7 @@ int main(void) {
     program* prgm = parse_program(tokens_used, index);
     printf("PARSER DIAGNOSTIC OF THE PROGRAM\n");
     if (prgm->is_program) {
-        printf("It's a program\n");
+        translate_program(prgm);
     } else {
         printf("It's not a program\n");
     }
