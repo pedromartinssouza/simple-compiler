@@ -1,5 +1,5 @@
 int main() {
-    return 2;
+    return ~2;
 }
 //TOKENS IN THIS FILE:
 // 1. int

@@ -14,34 +14,6 @@
 //              <expression> ::= <digit> { <digit> }
 //                  <digit> ::= "0" | "1" | ... | "9"
 
-// Data structures for the language
-typedef struct expression {
-    char value;
-    bool is_expression;
-} expression;
-typedef struct statement {
-    struct expression *expression;
-    bool is_statement;
-} statement;
-typedef struct identifier {
-    char *name;
-    bool is_identifier;
-} identifier;
-typedef struct kind {
-    char *name;
-    bool is_kind;
-} kind;
-typedef struct function {
-    struct kind *kind;
-    struct identifier *identifier;
-    struct statement *statement;
-    bool is_function;
-} function;
-typedef struct program{
-    struct function *function;
-    bool is_program;
-} program;
-
 expression *parse_expression(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
@@ -86,9 +58,10 @@ identifier* parse_identifier(lex_token_list *list_of_tokens, int *index)
     identifier *id = malloc(sizeof(identifier));
     if (list_of_tokens->token_list[local_index].token_type == TOKEN_MAIN)
     {
+        id->name = list_of_tokens->token_list[local_index].value;
+        id->is_identifier = true;
         local_index++;
         *index = local_index;
-        id->is_identifier = true;
         return id;
     }
     id->is_identifier = false;
@@ -101,9 +74,10 @@ kind* parse_kind(lex_token_list *list_of_tokens, int *index)
     kind *k = malloc(sizeof(kind));
     if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT)
     {
+        k->name = list_of_tokens->token_list[local_index].value;
+        k->is_kind = true;
         local_index++;
         *index = local_index;
-        k->is_kind = true;
         return k;
     }
     k->is_kind = false;
