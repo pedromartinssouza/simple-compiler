@@ -8,7 +8,7 @@
 #include "tokens.h"
 
 
-lex_token is_single_char_token(char c) {
+lex_token which_single_char_token(char c) {
     for (int i = 0; i < sizeof(single_char_tokens) / sizeof(lex_token); i++) {
         lex_token token = single_char_tokens[i];
         if (c == token.regex[0]) {
@@ -20,7 +20,7 @@ lex_token is_single_char_token(char c) {
 
 lex_token is_token(char *word, int word_size) {
 
-    lex_token single_char_token = is_single_char_token(word[0]);
+    lex_token single_char_token = which_single_char_token(word[0]);
     if (single_char_token.token_type != INVALID_TOKEN) {
         return single_char_token;
     }
@@ -57,32 +57,42 @@ lex_token_list* iterate_line(char *line, int line_size) {
         if (line[0] == '/' && line[1] == '/') {
             continue;
         }
-
-        if (line[i] == ' ' || line[i] == '\n' || line[i] == '\r') {
+        
+        if (line[i] == ' ' || 
+            line[i] == '\n' || 
+            line[i] == '\r' ||
+            which_single_char_token(line[i]).token_type != INVALID_TOKEN
+        )
+        {
             if (word_size != 0) {
                 lex_token token = is_token(word, word_size);
                 list_of_tokens->size++;
                 list_of_tokens->token_list = realloc(list_of_tokens->token_list, sizeof(lex_token) * list_of_tokens->size);
                 list_of_tokens->token_list[list_of_tokens->size - 1] = token;
-                word = NULL;
-                word_size = 0;
+                printf("TOKEN: %s\n", token.value);
             }
-            continue;
+            word = NULL;
+            word_size = 0;
+            if (line[i] == ' ' || line[i] == '\n' || line[i] == '\r') {
+                continue;
+            }
         }
-        
-        if (is_single_char_token(line[i]).token_type != INVALID_TOKEN && word_size != 0) {
+
+        char c = line[i];
+        word = (char*) realloc(word, sizeof(char) * word_size + 1);
+        word[word_size] = c;
+        word[word_size + 1] = '\0';
+        word_size++;
+
+        if (which_single_char_token(c).token_type != INVALID_TOKEN) {
             lex_token token = is_token(word, word_size);
             list_of_tokens->size++;
             list_of_tokens->token_list = realloc(list_of_tokens->token_list, sizeof(lex_token) * list_of_tokens->size);
             list_of_tokens->token_list[list_of_tokens->size - 1] = token;
+            printf("TOKEN: %s\n", token.value);
             word = NULL;
             word_size = 0;
         }
-
-        char c = line[i];
-        word = realloc(word, sizeof(char) * (word_size + 1));
-        word[word_size] = c;
-        word_size++;
     }
     return list_of_tokens;
 }
