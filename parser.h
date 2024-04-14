@@ -11,21 +11,35 @@
 //          <kind> ::= "int"
 //          <identifier> ::= "main"
 //          <statement> ::= "return" <expression> ";"
-//              <expression> ::= <digit> { <digit> }
+//              <expression> ::= <digit> { <digit> } | <UnOp> <expression>
 //                  <digit> ::= "0" | "1" | ... | "9"
 
 expression *parse_expression(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     expression *expr = malloc(sizeof(expression));
-    if (list_of_tokens->token_list[*index].token_type != TOKEN_NUMBER)
+    expr->token = &list_of_tokens->token_list[*index];
+    if (list_of_tokens->token_list[*index].token_type == TOKEN_NUMBER)
     {
-        expr->is_expression = false;
+        expr->value = *list_of_tokens->token_list[local_index].value;
+        expr->is_expression = true;
+        local_index++;
+        *index = local_index;
         return expr;
     }
-    expr->value = *list_of_tokens->token_list[*index].value;
-    local_index++;
-    *index = local_index;
+    if (is_unary_operator(list_of_tokens->token_list[local_index]))
+    {
+        expr->value = *list_of_tokens->token_list[local_index].value;
+        local_index++;
+        expr->expression = parse_expression(list_of_tokens, &local_index);
+        if (expr->expression->is_expression)
+        {
+            expr->is_expression = true;
+            *index = local_index;
+            return expr;
+        }
+    }
+    expr->is_expression = false;
     return expr;
 }
 
@@ -33,6 +47,7 @@ statement* parse_statement(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     statement *stmt = malloc(sizeof(statement));
+    stmt->token = &list_of_tokens->token_list[*index];
     if (list_of_tokens->token_list[local_index].token_type == TOKEN_RETURN)
     {
         local_index++;
@@ -56,6 +71,7 @@ identifier* parse_identifier(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     identifier *id = malloc(sizeof(identifier));
+    id->token = &list_of_tokens->token_list[local_index];
     if (list_of_tokens->token_list[local_index].token_type == TOKEN_MAIN)
     {
         id->name = list_of_tokens->token_list[local_index].value;
@@ -72,6 +88,7 @@ kind* parse_kind(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     kind *k = malloc(sizeof(kind));
+    k->token = &list_of_tokens->token_list[local_index];
     if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT)
     {
         k->name = list_of_tokens->token_list[local_index].value;
@@ -88,6 +105,7 @@ function* parse_function(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     function *func = malloc(sizeof(function));
+    func->token = &list_of_tokens->token_list[local_index];
     func->kind = parse_kind(list_of_tokens, &local_index);
     if (func->kind->is_kind)
     {
@@ -108,9 +126,9 @@ function* parse_function(lex_token_list *list_of_tokens, int *index)
                         {
                             if (list_of_tokens->token_list[local_index].token_type == TOKEN_RBRACE)
                             {
+                                func->is_function = true;
                                 local_index++;
                                 *index = local_index;
-                                func->is_function = true;
                                 return func;
                             }
                         }
@@ -127,11 +145,12 @@ program* parse_program(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     program *prog = malloc(sizeof(program));
+    prog->token = &list_of_tokens->token_list[local_index];
     prog->function = parse_function(list_of_tokens, &local_index);
     if (prog->function->is_function)
     {
-        *index = local_index;
         prog->is_program = true;
+        *index = local_index;
         return prog;
     }
     prog->is_program = false;
