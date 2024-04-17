@@ -22,7 +22,7 @@ int main(void) {
     program* prgm = parse_program(tokens_used, index);
     printf("PARSER DIAGNOSTIC OF THE PROGRAM\n");
     if (prgm->is_program) {
-        translate_program(prgm);
+        printf("It's a program\n");
     } else {
         printf("It's not a program\n");
     }
