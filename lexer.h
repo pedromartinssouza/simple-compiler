@@ -69,7 +69,6 @@ lex_token_list* iterate_line(char *line, int line_size) {
                 list_of_tokens->size++;
                 list_of_tokens->token_list = realloc(list_of_tokens->token_list, sizeof(lex_token) * list_of_tokens->size);
                 list_of_tokens->token_list[list_of_tokens->size - 1] = token;
-                printf("TOKEN: %s\n", token.value);
             }
             word = NULL;
             word_size = 0;
@@ -89,7 +88,6 @@ lex_token_list* iterate_line(char *line, int line_size) {
             list_of_tokens->size++;
             list_of_tokens->token_list = realloc(list_of_tokens->token_list, sizeof(lex_token) * list_of_tokens->size);
             list_of_tokens->token_list[list_of_tokens->size - 1] = token;
-            printf("TOKEN: %s\n", token.value);
             word = NULL;
             word_size = 0;
         }

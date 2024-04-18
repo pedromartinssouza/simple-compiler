@@ -16,12 +16,14 @@ enum Tokens {
     TOKEN_NUMBER,
     TOKEN_SEMICOLON,
     TOKEN_EQUAL,
-    TOKEN_PLUS,
-    TOKEN_NEG,
     TOKEN_GREATER,
     TOKEN_LESS,
+    TOKEN_NEG,
     TOKEN_BITWISE_COMPLEMENT,
     TOKEN_NEGATION,
+    TOKEN_PLUS,
+    TOKEN_MULTIPLICATION,
+    TOKEN_DIVISION,
 };
 
 
@@ -51,6 +53,8 @@ lex_token single_char_tokens[] = {
     {TOKEN_LESS, "<", "<"},
     {TOKEN_BITWISE_COMPLEMENT, "~", "~"},
     {TOKEN_NEGATION, "!", "!"},
+    {TOKEN_MULTIPLICATION, "*", "*"},
+    {TOKEN_DIVISION, "/", "/"},
 };
 
 lex_token token_regex_relation[] = {
@@ -69,37 +73,57 @@ lex_token token_regex_relation[] = {
 //                  <digit> ::= "0" | "1" | ... | "9"
 
 // Data structures for the language
-typedef struct expression {
+
+
+typedef struct BinOp{
+    lex_token *operation;
+    struct term *lTerm;
+    struct term *rTerm;
+    struct factor *lFactor;
+    struct factor *rFactor;
+} BinOp;
+
+typedef struct UnOp{
+    lex_token *operation;
+} UnOp;
+
+typedef struct factor {
     char value;
     struct expression *expression;
-    lex_token *token;
+    struct factor *factor;
+    lex_token *operation;
+    bool is_factor;
+} factor;
+typedef struct term {
+    struct factor *factor;
+    BinOp *binop;
+    bool is_term;
+} term;
+typedef struct expression {
+    term *term;
+    BinOp *binop;
     bool is_expression;
 } expression;
 typedef struct statement {
     struct expression *expression;
-    lex_token *token;
     bool is_statement;
 } statement;
 typedef struct identifier {
     char *name;
-    lex_token *token;
     bool is_identifier;
 } identifier;
 typedef struct kind {
     char *name;
-    lex_token *token;
     bool is_kind;
 } kind;
 typedef struct function {
     struct kind *kind;
     struct identifier *identifier;
     struct statement *statement;
-    lex_token *token;
     bool is_function;
 } function;
 typedef struct program{
     struct function *function;
-    lex_token *token;
     bool is_program;
 } program;
 
@@ -108,6 +132,23 @@ bool is_unary_operator(lex_token token)
     return token.token_type == TOKEN_NEG
         || token.token_type == TOKEN_BITWISE_COMPLEMENT
         || token.token_type == TOKEN_NEGATION;
+}
+
+bool is_token_regex_int(lex_token token)
+{
+
+    for (int i = 0; i < sizeof(token_regex_relation) / sizeof(lex_token); i++) {
+        lex_token reference_token = token_regex_relation[i];
+        if (reference_token.token_type != TOKEN_NUMBER)
+            continue;
+
+        regex_t regex;
+        regcomp(&regex, reference_token.regex, REG_EXTENDED);
+        int match = regexec(&regex, token.value, 0, NULL, 0);
+        if (match == 0)
+            return true;
+    }
+    return false;
 }
 
 #endif
