@@ -25,6 +25,8 @@ void translate_program(program *prg);
 void translate_function(function *func);
 void translate_statement(statement *stmt);
 void translate_expression(expression *expr);
+void translate_term(term *t);
+void translate_factor(factor *f);
 
 void translate_program(program *prg) {
     translate_function(prg->function);
@@ -42,22 +44,59 @@ void translate_statement(statement *stmt) {
 }
 
 void translate_expression(expression *expr) {
-//    if (is_unary_operator(*expr->token)) {
-//        if (expr->token->token_type == TOKEN_NEG) {
-//            translate_expression(expr->expression);
-//            printf("negl %%eax\n");
-//        } else if (expr->token->token_type == TOKEN_BITWISE_COMPLEMENT) {
-//            translate_expression(expr->expression);
-//            printf("notl %%eax\n");
-//        } else if (expr->token->token_type == TOKEN_NEGATION) {
-//            translate_expression(expr->expression);
-//            printf("cmpl $0, %%eax\n");
-//            printf("movl $0, %%eax\n");
-//            printf("sete %%al\n");
-//        }
-//    } else {
-//        printf("movl $%c, %%eax\n", expr->value);
-//    }
+    if (expr->term != NULL) {
+        translate_term(expr->term);
+    } else if (expr->binop != NULL) {
+        if (expr->binop->lTerm != NULL) {
+            translate_term(expr->binop->lTerm);
+        }
+        if (expr->binop->rTerm != NULL) {
+            translate_term(expr->binop->rTerm);
+        }
+    }
+}
+
+void translate_term(term *t) {
+    if (t->factor != NULL) {
+        translate_factor(t->factor);
+    } else if (t->binop != NULL) {
+        if (t->binop->lTerm != NULL) {
+            translate_term(t->binop->lTerm);
+        }
+        printf("%s", t->binop->operation->value);
+        if (t->binop->rTerm != NULL) {
+            translate_term(t->binop->rTerm);
+        }
+    }
+}
+
+void translate_factor(factor *f) {
+    if (f->expression != NULL) {
+        translate_expression(f->expression);
+    } 
+    else if (f->operation != NULL) {
+        if (f->operation->token_type == TOKEN_NEG) {
+            if (f->factor != NULL) {
+                translate_factor(f->factor);
+            }
+            printf("negl %%eax\n");
+        } else if (f->operation->token_type == TOKEN_BITWISE_COMPLEMENT) {
+            if (f->factor != NULL) {
+                translate_factor(f->factor);
+            }
+            printf("notl %%eax\n");
+        } else if (f->operation->token_type == TOKEN_NEGATION) {
+            if (f->factor != NULL) {
+                translate_factor(f->factor);
+            }
+            printf("cmpl $0, %%eax\n");
+            printf("movl $0, %%eax\n");
+            printf("sete %%al\n");
+        }
+    }
+    else {
+        printf("%c", f->value);
+    }
 }
 
 #endif

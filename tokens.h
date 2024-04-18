@@ -134,4 +134,21 @@ bool is_unary_operator(lex_token token)
         || token.token_type == TOKEN_NEGATION;
 }
 
+bool is_token_regex_int(lex_token token)
+{
+
+    for (int i = 0; i < sizeof(token_regex_relation) / sizeof(lex_token); i++) {
+        lex_token reference_token = token_regex_relation[i];
+        if (reference_token.token_type != TOKEN_NUMBER)
+            continue;
+
+        regex_t regex;
+        regcomp(&regex, reference_token.regex, REG_EXTENDED);
+        int match = regexec(&regex, token.value, 0, NULL, 0);
+        if (match == 0)
+            return true;
+    }
+    return false;
+}
+
 #endif
