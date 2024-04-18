@@ -63,9 +63,20 @@ void translate_term(term *t) {
         if (t->binop->lTerm != NULL) {
             translate_term(t->binop->lTerm);
         }
-        printf("%s", t->binop->operation->value);
+        printf("push %%eax\n");
         if (t->binop->rTerm != NULL) {
             translate_term(t->binop->rTerm);
+        }
+        printf("pop %%ecx\n");
+        if (t->binop->operation->token_type == TOKEN_PLUS) {
+            printf("addl %%ecx, %%eax\n");
+        } else if (t->binop->operation->token_type == TOKEN_NEG) {
+            printf("subl %%ecx, %%eax\n");
+        } else if (t->binop->operation->token_type == TOKEN_MULTIPLICATION) {
+            printf("imul %%ecx, %%eax\n");
+        } else if (t->binop->operation->token_type == TOKEN_DIVISION) {
+            printf("cdq\n");
+            printf("idivl %%ecx\n");
         }
     }
 }
@@ -95,7 +106,7 @@ void translate_factor(factor *f) {
         }
     }
     else {
-        printf("%c", f->value);
+            printf("movl $%c, %%eax\n", f->value);
     }
 }
 
