@@ -15,7 +15,7 @@ enum Tokens {
     TOKEN_RETURN,
     TOKEN_NUMBER,
     TOKEN_SEMICOLON,
-    TOKEN_EQUAL,
+    TOKEN_ASSIGNMENT,
     TOKEN_GREATER,
     TOKEN_LESS,
     TOKEN_NEG,
@@ -24,6 +24,14 @@ enum Tokens {
     TOKEN_PLUS,
     TOKEN_MULTIPLICATION,
     TOKEN_DIVISION,
+    TOKEN_AND,
+    TOKEN_OR,
+    TOKEN_EQUAL,
+    TOKEN_NOT_EQUAL,
+    TOKEN_LESS_THAN,
+    TOKEN_LESS_THAN_EQUAL,
+    TOKEN_GREATER_THAN,
+    TOKEN_GREATER_THAN_EQUAL,
 };
 
 
@@ -46,7 +54,6 @@ lex_token single_char_tokens[] = {
     {TOKEN_LBRACE, "{", "{"},
     {TOKEN_RBRACE, "}", "}"},
     {TOKEN_SEMICOLON, ";", ";"},
-    {TOKEN_EQUAL, "=", "="},
     {TOKEN_PLUS, "+", "+"},
     {TOKEN_NEG, "-", "-"},
     {TOKEN_GREATER, ">", ">"},
@@ -62,6 +69,14 @@ lex_token token_regex_relation[] = {
     {TOKEN_MAIN, "main", "main"},
     {TOKEN_RETURN, "return", "return"},
     {TOKEN_NUMBER, "[0-9]+", NULL},
+    {TOKEN_AND, "&&", "&&"},
+    {TOKEN_OR, "||", "||"},
+    {TOKEN_EQUAL, "==", "=="},
+    {TOKEN_NOT_EQUAL, "!=", "!="},
+    {TOKEN_LESS_THAN, "<", "<"},
+    {TOKEN_LESS_THAN_EQUAL, "<=", "<="},
+    {TOKEN_GREATER_THAN, ">", ">"},
+    {TOKEN_GREATER_THAN_EQUAL, ">=", ">="},
 };
 // Backus-Naur Form (BNF) for the language
 // <program> ::= <function>
