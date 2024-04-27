@@ -70,7 +70,7 @@ lex_token token_regex_relation[] = {
     {TOKEN_RETURN, "return", "return"},
     {TOKEN_NUMBER, "[0-9]+", NULL},
     {TOKEN_AND, "&&", "&&"},
-    {TOKEN_OR, "||", "||"},
+    {TOKEN_OR, "\\|\\|", "||"},
     {TOKEN_EQUAL, "==", "=="},
     {TOKEN_NOT_EQUAL, "!=", "!="},
     {TOKEN_LESS_THAN, "<", "<"},
