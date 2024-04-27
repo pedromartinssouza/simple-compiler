@@ -44,7 +44,18 @@ expression *parse_expression(lex_token_list *list_of_tokens, int *index)
         //region previous_binop
         exp->term = t;
         BinOp *previous_binop = NULL;
-        while(list_of_tokens->token_list[local_index].token_type == TOKEN_PLUS || list_of_tokens->token_list[local_index].token_type == TOKEN_NEG)
+        while(
+            list_of_tokens->token_list[local_index].token_type == TOKEN_PLUS || 
+            list_of_tokens->token_list[local_index].token_type == TOKEN_NEG ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_AND ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_OR ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_EQUAL ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_NOT_EQUAL ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_LESS_THAN ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_LESS_THAN_EQUAL ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_GREATER_THAN ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_GREATER_THAN_EQUAL 
+        )
         {
             exp->term = NULL;
             if (exp->binop == NULL)
