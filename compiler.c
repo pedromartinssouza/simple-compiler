@@ -12,14 +12,14 @@ void print_binop(BinOp *b, int depth);
 
 int main(void) {
     lex_token_list *tokens_used = get_tokens_in_file("return_2.c");
-    printf("TOKENS IDENTIFIED BY LEXER\n[");
+    printf("TOKENS IDENTIFIED BY LEXER\n");
     for (int i = 0; i < tokens_used->size; i++) {
-        printf("%s", tokens_used->token_list[i].value);
+        printf("\t%s", tokens_used->token_list[i].value);
         if (i != tokens_used->size - 1) {
             printf("\n");
         }
     }
-    printf("]\n");
+    printf("\n");
 
     int *index = malloc(sizeof(int));
     *index = 0;

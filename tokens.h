@@ -32,6 +32,7 @@ enum Tokens {
     TOKEN_LESS_THAN_EQUAL,
     TOKEN_GREATER_THAN,
     TOKEN_GREATER_THAN_EQUAL,
+    TOKEN_ID,
 };
 
 
@@ -54,6 +55,7 @@ lex_token single_char_tokens[] = {
     {TOKEN_LBRACE, "{", "{"},
     {TOKEN_RBRACE, "}", "}"},
     {TOKEN_SEMICOLON, ";", ";"},
+    {TOKEN_ASSIGNMENT, "=", "="},
     {TOKEN_PLUS, "+", "+"},
     {TOKEN_NEG, "-", "-"},
     {TOKEN_GREATER, ">", ">"},
@@ -77,15 +79,22 @@ lex_token token_regex_relation[] = {
     {TOKEN_LESS_THAN_EQUAL, "<=", "<="},
     {TOKEN_GREATER_THAN, ">", ">"},
     {TOKEN_GREATER_THAN_EQUAL, ">=", ">="},
+    {TOKEN_ID, "[a-zA-Z_][a-zA-Z_0-9]*", NULL},
 };
 // Backus-Naur Form (BNF) for the language
 // <program> ::= <function>
-//      <function> ::= <kind> <identifier> "(" ")" "{" <statement> "}"
-//          <kind> ::= "int"
+//      <function> ::= <kind> <identifier> "(" ")" "{" { <statement> } "}"
+//          <kind> ::= "int" 
+//                      | "float"
 //          <identifier> ::= "main"
-//          <statement> ::= "return" <expression> ";"
-//              <expression> ::= <digit> { <digit> } | <UnOp> <expression>
+//          <statement> ::= "return" <expression> ";" 
+//                          | <kind> <id> [ "=" <expression> ] ";" 
+//                          | <expression> ";"
+//              <expression> ::= <digit> { [<BinOp>] <digit> } 
+//                              | <UnOp> <expression> 
+//                              | <id> "=" <expression>
 //                  <digit> ::= "0" | "1" | ... | "9"
+//                  <id> ::= "a" | "b" | ... | "z" { "a" | "b" | ... | "z" | "0" | "1" | ... | "9" }
 
 // Data structures for the language
 
