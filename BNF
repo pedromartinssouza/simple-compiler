@@ -1,0 +1,15 @@
+// Backus-Naur Form (BNF) for the language
+// <program> ::= <function>
+//      <function> ::= <kind> <identifier> "(" ")" "{" { <statement> } "}"
+//          <kind> ::= "int" | "char" | "qubit" | "bit"
+//          <identifier> ::= "main"
+//          <statement> ::= "return" <expression> ";" 
+//                          | <kind> <id> [<number>] [ "=" <expression> ] ";" 
+//                          | <expression> ";"
+//              <expression> ::= <term> { ("+" | "-") <term> }
+//                  <term> ::= <factor> { ("*" | "/") <factor> }
+//                      <factor> ::= "(" <expression> ")" | <UnOp> <factor> | <digit> | <id> | <id> = <expression>
+//                  <number> ::= <digit> { <digit> }
+//                  <digit> ::= "0" | "1" | ... | "9"
+//                  <id> ::= "a" | "b" | ... | "z" { "a" | "b" | ... | "z" | "0" | "1" | ... | "9" }
+//                  <UnOp> ::= "-" | "!" | "~"

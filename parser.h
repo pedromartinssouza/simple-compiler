@@ -5,16 +5,7 @@
 #include <stdlib.h>
 #include "tokens.h"
 
-// Backus-Naur Form (BNF) for the language
-// <program> ::= <function>
-//      <function> ::= <kind> <identifier> "(" ")" "{" <statement> "}"
-//          <kind> ::= "int"
-//          <identifier> ::= "main"
-//          <statement> ::= "return" <expression> ";"
-//              <expression> ::= <term> { ("+" | "-") <term> }
-//                  <term> ::= <factor> { ("*" | "/") <factor> }
-//                      <factor> ::= "(" <expression> ")" | <UnOp> <factor> | <digit>
-//                  <digit> ::= "0" | "1" | ... | "9"
+variable_cache cache;
 
 factor *parse_factor(lex_token_list *list_of_tokens, int *index);
 term *parse_term(lex_token_list *list_of_tokens, int *index);
@@ -29,6 +20,7 @@ term *copy_term(term *t);
 BinOp *copy_binop(BinOp *b);
 factor *copy_factor(factor *f);
 expression *copy_expression(expression *e);
+statement *copy_statement(statement *s);
 
 expression *parse_expression(lex_token_list *list_of_tokens, int *index)
 {
@@ -101,6 +93,7 @@ expression *parse_expression(lex_token_list *list_of_tokens, int *index)
         return exp;
     }
     exp->is_expression = false;
+    variable_cache *temp = &cache;
     return exp;
 }
 
@@ -174,6 +167,7 @@ factor *parse_factor(lex_token_list *list_of_tokens, int *index)
             if (list_of_tokens->token_list[local_index].token_type == TOKEN_RPAREN)
             {
                 f->is_factor = true;
+                f->factor_type = FACTOR_EXPRESSION;
                 local_index++;
                 *index = local_index;
                 return f;
@@ -189,19 +183,41 @@ factor *parse_factor(lex_token_list *list_of_tokens, int *index)
         if (f->factor->is_factor)
         {
             f->is_factor = true;
+            f->factor_type = FACTOR_UNOP;
             *index = local_index;
             return f;
         }
     }
-    // factor -> <int>
+    // factor -> <digit>
     else if (is_token_regex_int(list_of_tokens->token_list[local_index]))
     {
         f->is_factor = true;
         f->value = *list_of_tokens->token_list[local_index].value;
+        f->factor_type = FACTOR_NUMBER;
         local_index++;
         *index = local_index;
         return f;
     }
+    // factor -> <id> "=" <expression>
+    else if (list_of_tokens->token_list[local_index].token_type == TOKEN_ID)
+    {
+        f->is_factor = true;
+        f->identifier = list_of_tokens->token_list[local_index].value;
+        f->factor_type = FACTOR_IDENTIFIER;
+        local_index++;
+        if (list_of_tokens->token_list[local_index].token_type == TOKEN_ASSIGNMENT)
+        {
+            local_index++;
+            f->expression = parse_expression(list_of_tokens, &local_index);
+            if (!f->expression->is_expression)
+            {
+                f->expression = NULL;
+            }
+        }
+        *index = local_index;
+        return f;
+    }
+
     f->value = '\0';
     f->is_factor = false;
     return f;
@@ -222,9 +238,98 @@ statement* parse_statement(lex_token_list *list_of_tokens, int *index)
                 local_index++;
                 *index = local_index;
                 stmt->is_statement = true;
+                stmt->statement_type = STATEMENT_RETURN;
                 return stmt;
             }
         }
+    }
+    else if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT || 
+            list_of_tokens->token_list[local_index].token_type == TOKEN_CHAR ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_QUBIT ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_BIT)
+    {
+        int var_type = list_of_tokens->token_list[local_index].token_type;
+        int initial_var_size = 1;
+        local_index++;
+        if (list_of_tokens->token_list[local_index].token_type == TOKEN_ID)
+        {
+            stmt->identifier = list_of_tokens->token_list[local_index].value;
+            local_index++;
+            stmt->statement_type = STATEMENT_DECLARATION;
+            if (list_of_tokens->token_list[local_index].token_type == TOKEN_LBRACK)
+            {
+                local_index++;
+                if (list_of_tokens->token_list[local_index].token_type == TOKEN_NUMBER)
+                {
+                    initial_var_size = atoi(list_of_tokens->token_list[local_index].value);
+                    local_index++;
+                    if (list_of_tokens->token_list[local_index].token_type == TOKEN_RBRACK)
+                    {
+                        local_index++;
+                    } else 
+                    {    
+                        stmt->is_statement = false;
+                        return stmt;
+                    }
+                } else 
+                {    
+                    stmt->is_statement = false;
+                    return stmt;
+                }
+            }
+            if (list_of_tokens->token_list[local_index].token_type == TOKEN_ASSIGNMENT)
+            {
+                local_index++;
+                stmt->expression = parse_expression(list_of_tokens, &local_index);
+                if (!stmt->expression->is_expression)
+                { 
+                    stmt->expression = NULL;
+                }
+            }
+            if (list_of_tokens->token_list[local_index].token_type == TOKEN_SEMICOLON)
+            {
+                cache.variables = realloc(cache.variables, sizeof(generic_variable_instance) * (cache.size + 1));
+                cache.variables[cache.size].name = stmt->identifier;
+                cache.variables[cache.size].size = initial_var_size;
+                switch (var_type)
+                {
+                case TOKEN_INT:
+                    cache.variables[cache.size].var_def = int_def;
+                    break;
+                case TOKEN_CHAR:
+                    cache.variables[cache.size].var_def = char_def;
+                    break;
+                case TOKEN_QUBIT:
+                    cache.variables[cache.size].var_def = qubit_def;
+                    break;
+                case TOKEN_BIT:
+                    cache.variables[cache.size].var_def = bit_def;
+                    break;
+                default:
+                    break;
+                }
+                cache.size++;
+
+                local_index++;
+                *index = local_index;
+                stmt->is_statement = true;
+                return stmt;
+            }
+        }
+    }
+    stmt->expression = parse_expression(list_of_tokens, &local_index);
+    if (stmt->expression->is_expression)
+    {
+        if (list_of_tokens->token_list[local_index].token_type == TOKEN_SEMICOLON)
+        {
+            local_index++;
+            *index = local_index;
+            stmt->is_statement = true;
+            stmt->statement_type = STATEMENT_EXPRESSION;
+            return stmt;
+        }
+    } else {
+        stmt->expression = NULL;
     }
     stmt->is_statement = false;
     return stmt;
@@ -250,7 +355,10 @@ kind* parse_kind(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     kind *k = malloc(sizeof(kind));
-    if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT)
+    if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT || 
+        list_of_tokens->token_list[local_index].token_type == TOKEN_CHAR ||
+        list_of_tokens->token_list[local_index].token_type == TOKEN_QUBIT ||
+        list_of_tokens->token_list[local_index].token_type == TOKEN_BIT)
     {
         k->name = list_of_tokens->token_list[local_index].value;
         k->is_kind = true;
@@ -260,6 +368,23 @@ kind* parse_kind(lex_token_list *list_of_tokens, int *index)
     }
     k->is_kind = false;
     return k;
+}
+
+bool parse_all_statements(lex_token_list *list_of_tokens, int *index, function *func)
+{
+    int local_index = *index;
+    statement *stmt = parse_statement(list_of_tokens, &local_index);
+    if (stmt->is_statement)
+    {
+        func->statement = realloc(func->statement, sizeof(statement) * (func->statement_count + 1));
+        func->statement[func->statement_count] = *stmt;
+        func->statement[func->statement_count].is_statement = true;
+        func->statement_count++;
+        parse_all_statements(list_of_tokens, &local_index, func);
+        *index = local_index;
+        return true;
+    }
+    return false;
 }
 
 function* parse_function(lex_token_list *list_of_tokens, int *index)
@@ -281,8 +406,9 @@ function* parse_function(lex_token_list *list_of_tokens, int *index)
                     if (list_of_tokens->token_list[local_index].token_type == TOKEN_LBRACE)
                     {
                         local_index++;
-                        func->statement = parse_statement(list_of_tokens, &local_index);
-                        if (func->statement->is_statement)
+                        func->statement_count = 0;
+                        bool has_statements = parse_all_statements(list_of_tokens, &local_index, func);
+                        if (has_statements)
                         {
                             if (list_of_tokens->token_list[local_index].token_type == TOKEN_RBRACE)
                             {
