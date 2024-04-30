@@ -39,8 +39,10 @@ void translate_function(function *func) {
 }
 
 void translate_statement(statement *stmt) {
-    translate_expression(stmt->expression);
-    printf("ret\n");
+    if(stmt->statement_type == STATEMENT_EXPRESSION) {
+        translate_expression(stmt->expression);
+        printf("ret\n");
+    }
 }
 
 void translate_expression(expression *expr) {
