@@ -11,7 +11,7 @@ void print_term(term *t, int depth);
 void print_binop(BinOp *b, int depth);
 
 int main(void) {
-    lex_token_list *tokens_used = get_tokens_in_file("return_2.c");
+    lex_token_list *tokens_used = get_tokens_in_file("return_2.quc");
     printf("TOKENS IDENTIFIED BY LEXER\n");
     for (int i = 0; i < tokens_used->size; i++) {
         printf("\t%s", tokens_used->token_list[i].value);

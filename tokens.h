@@ -8,6 +8,7 @@ typedef enum Types {
     VARIABLE_INT,
     VARIABLE_CHAR,
     VARIABLE_QUBIT,
+    VARIABLE_BIT,
 } Types;
 
 typedef struct variable_definition {
@@ -19,6 +20,7 @@ typedef struct variable_definition {
 const variable_definition int_def = {VARIABLE_INT, "int", 32};
 const variable_definition char_def = {VARIABLE_CHAR, "char", 8};
 const variable_definition qubit_def = {VARIABLE_QUBIT, "qubit", 1};
+const variable_definition bit_def = {VARIABLE_BIT, "bit", 1};
 
 typedef struct generic_variable_instance {
     char *name;
@@ -26,17 +28,23 @@ typedef struct generic_variable_instance {
     variable_definition var_def;
 } generic_variable_instance;
 
-typedef struct variable_cache {
+struct variable_cache_s {
     generic_variable_instance *variables;
     int size;
-} variable_cache;
+} variable_cache_s = {NULL, 0};
+typedef struct variable_cache_s variable_cache;
 
 enum Tokens {
     INVALID_TOKEN = -1,
     TOKEN_INT,
+    TOKEN_CHAR,
+    TOKEN_QUBIT,
+    TOKEN_BIT,
     TOKEN_MAIN,
     TOKEN_LPAREN,
     TOKEN_RPAREN,
+    TOKEN_LBRACK,
+    TOKEN_RBRACK,
     TOKEN_LBRACE,
     TOKEN_RBRACE,
     TOKEN_RETURN,
@@ -79,6 +87,8 @@ lex_token invalid_token = {INVALID_TOKEN, ""};
 lex_token single_char_tokens[] = {
     {TOKEN_LPAREN, "(", "("},
     {TOKEN_RPAREN, ")", ")"},
+    {TOKEN_LBRACK, "[", "["},
+    {TOKEN_RBRACK, "]", "]"},
     {TOKEN_LBRACE, "{", "{"},
     {TOKEN_RBRACE, "}", "}"},
     {TOKEN_SEMICOLON, ";", ";"},
@@ -95,6 +105,9 @@ lex_token single_char_tokens[] = {
 
 lex_token token_regex_relation[] = {
     {TOKEN_INT, "int", "int"},
+    {TOKEN_CHAR, "char", "char"},
+    {TOKEN_QUBIT, "qubit", "qubit"},
+    {TOKEN_BIT, "bit", "bit"},
     {TOKEN_MAIN, "main", "main"},
     {TOKEN_RETURN, "return", "return"},
     {TOKEN_NUMBER, "[0-9]+", NULL},
@@ -188,7 +201,6 @@ bool is_unary_operator(lex_token token)
 
 bool is_token_regex_int(lex_token token)
 {
-
     for (int i = 0; i < sizeof(token_regex_relation) / sizeof(lex_token); i++) {
         lex_token reference_token = token_regex_relation[i];
         if (reference_token.token_type != TOKEN_NUMBER)

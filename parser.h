@@ -5,22 +5,6 @@
 #include <stdlib.h>
 #include "tokens.h"
 
-// Backus-Naur Form (BNF) for the language
-// <program> ::= <function>
-//      <function> ::= <kind> <identifier> "(" ")" "{" { <statement> } "}"
-//          <kind> ::= "int"
-//          <identifier> ::= "main"
-//          <statement> ::= "return" <expression> ";" 
-//                          | <kind> <id> [<number>] [ "=" <expression> ] ";" 
-//                          | <expression> ";"
-//              <expression> ::= <term> { ("+" | "-") <term> }
-//                  <term> ::= <factor> { ("*" | "/") <factor> }
-//                      <factor> ::= "(" <expression> ")" | <UnOp> <factor> | <digit> | <id> | <id> = <expression>
-//                  <number> ::= <digit> { <digit> }
-//                  <digit> ::= "0" | "1" | ... | "9"
-//                  <id> ::= "a" | "b" | ... | "z" { "a" | "b" | ... | "z" | "0" | "1" | ... | "9" }
-//                  <UnOp> ::= "-" | "!" | "~"
-
 variable_cache cache;
 
 factor *parse_factor(lex_token_list *list_of_tokens, int *index);
@@ -43,7 +27,6 @@ expression *parse_expression(lex_token_list *list_of_tokens, int *index)
     int local_index = *index;
     expression *exp = malloc(sizeof(expression));
 
-    cache.size = 0;
     exp->binop = NULL;
     exp->term = NULL;
     exp->is_expression = false;
@@ -260,15 +243,40 @@ statement* parse_statement(lex_token_list *list_of_tokens, int *index)
             }
         }
     }
-    else if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT)
+    else if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT || 
+            list_of_tokens->token_list[local_index].token_type == TOKEN_CHAR ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_QUBIT ||
+            list_of_tokens->token_list[local_index].token_type == TOKEN_BIT)
     {
         int var_type = list_of_tokens->token_list[local_index].token_type;
+        int initial_var_size = 1;
         local_index++;
         if (list_of_tokens->token_list[local_index].token_type == TOKEN_ID)
         {
             stmt->identifier = list_of_tokens->token_list[local_index].value;
             local_index++;
             stmt->statement_type = STATEMENT_DECLARATION;
+            if (list_of_tokens->token_list[local_index].token_type == TOKEN_LBRACK)
+            {
+                local_index++;
+                if (list_of_tokens->token_list[local_index].token_type == TOKEN_NUMBER)
+                {
+                    initial_var_size = atoi(list_of_tokens->token_list[local_index].value);
+                    local_index++;
+                    if (list_of_tokens->token_list[local_index].token_type == TOKEN_RBRACK)
+                    {
+                        local_index++;
+                    } else 
+                    {    
+                        stmt->is_statement = false;
+                        return stmt;
+                    }
+                } else 
+                {    
+                    stmt->is_statement = false;
+                    return stmt;
+                }
+            }
             if (list_of_tokens->token_list[local_index].token_type == TOKEN_ASSIGNMENT)
             {
                 local_index++;
@@ -282,11 +290,20 @@ statement* parse_statement(lex_token_list *list_of_tokens, int *index)
             {
                 cache.variables = realloc(cache.variables, sizeof(generic_variable_instance) * (cache.size + 1));
                 cache.variables[cache.size].name = stmt->identifier;
-                cache.variables[cache.size].size = 1;
+                cache.variables[cache.size].size = initial_var_size;
                 switch (var_type)
                 {
                 case TOKEN_INT:
                     cache.variables[cache.size].var_def = int_def;
+                    break;
+                case TOKEN_CHAR:
+                    cache.variables[cache.size].var_def = char_def;
+                    break;
+                case TOKEN_QUBIT:
+                    cache.variables[cache.size].var_def = qubit_def;
+                    break;
+                case TOKEN_BIT:
+                    cache.variables[cache.size].var_def = bit_def;
                     break;
                 default:
                     break;
@@ -338,7 +355,10 @@ kind* parse_kind(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     kind *k = malloc(sizeof(kind));
-    if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT)
+    if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT || 
+        list_of_tokens->token_list[local_index].token_type == TOKEN_CHAR ||
+        list_of_tokens->token_list[local_index].token_type == TOKEN_QUBIT ||
+        list_of_tokens->token_list[local_index].token_type == TOKEN_BIT)
     {
         k->name = list_of_tokens->token_list[local_index].value;
         k->is_kind = true;
