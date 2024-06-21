@@ -11,7 +11,7 @@ void print_term(term *t, int depth);
 void print_binop(BinOp *b, int depth);
 
 int main(void) {
-    lex_token_list *tokens_used = get_tokens_in_file("return_2.quc");
+    lex_token_list *tokens_used = get_tokens_in_file("fourier.quc");
     printf("TOKENS IDENTIFIED BY LEXER\n");
     for (int i = 0; i < tokens_used->size; i++) {
         printf("\t%s", tokens_used->token_list[i].value);
@@ -32,8 +32,7 @@ int main(void) {
         printf("It's not a program\n");
     }
 
-    printf("TRANSLATED INTO ASSEMBLY\n");
+    printf("TRANSLATOR DIAGNOSTIC OF THE PROGRAM\n");
     translate_program(prgm);
-
     return 0;
 }

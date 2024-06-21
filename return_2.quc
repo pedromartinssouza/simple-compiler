@@ -1,6 +1,5 @@
 int main() {
     int a[2];
-    qubit q;
     a = 1;
     return a;
 }

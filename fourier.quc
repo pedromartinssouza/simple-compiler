@@ -1,0 +1,29 @@
+//int main() {
+//    bit c[3];
+//    qubit q[3];
+//    @ q[0];
+//    q[1] c(pi/2) q[0];
+//    @ q[1];
+//    q[2] c(pi/4) q[0];
+//    q[2] c(pi/2) q[1];
+//    @ q[2];
+//    barrier;
+//    c = q;
+//}
+
+//int main() {
+//    4*5+5;
+//}
+
+int main() {
+    bit c[3];
+    qubit q[3];
+    @ q[0];
+    q[1] cph(pi/2) q[0];
+    @ q[1];
+    q[2] cph(pi/4) q[0];
+    q[2] cph(pi/2) q[1];
+    @ q[2];
+    barrier;
+    c = q;
+}

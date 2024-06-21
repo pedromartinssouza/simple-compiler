@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 typedef enum Types {
+    VARIABLE_VOID,
     VARIABLE_INT,
     VARIABLE_CHAR,
     VARIABLE_QUBIT,
@@ -21,6 +22,7 @@ const variable_definition int_def = {VARIABLE_INT, "int", 32};
 const variable_definition char_def = {VARIABLE_CHAR, "char", 8};
 const variable_definition qubit_def = {VARIABLE_QUBIT, "qubit", 1};
 const variable_definition bit_def = {VARIABLE_BIT, "bit", 1};
+const variable_definition void_def = {VARIABLE_VOID, "void", 0};
 
 typedef struct generic_variable_instance {
     char *name;
@@ -48,6 +50,9 @@ enum Tokens {
     TOKEN_LBRACE,
     TOKEN_RBRACE,
     TOKEN_RETURN,
+    TOKEN_BARRIER,
+    TOKEN_CPHASE,
+    TOKEN_PI,
     TOKEN_NUMBER,
     TOKEN_SEMICOLON,
     TOKEN_ASSIGNMENT,
@@ -56,6 +61,7 @@ enum Tokens {
     TOKEN_NEG,
     TOKEN_BITWISE_COMPLEMENT,
     TOKEN_NEGATION,
+    TOKEN_HADAMARD,
     TOKEN_PLUS,
     TOKEN_MULTIPLICATION,
     TOKEN_DIVISION,
@@ -63,9 +69,7 @@ enum Tokens {
     TOKEN_OR,
     TOKEN_EQUAL,
     TOKEN_NOT_EQUAL,
-    TOKEN_LESS_THAN,
     TOKEN_LESS_THAN_EQUAL,
-    TOKEN_GREATER_THAN,
     TOKEN_GREATER_THAN_EQUAL,
     TOKEN_ID,
 };
@@ -99,6 +103,7 @@ lex_token single_char_tokens[] = {
     {TOKEN_LESS, "<", "<"},
     {TOKEN_BITWISE_COMPLEMENT, "~", "~"},
     {TOKEN_NEGATION, "!", "!"},
+    {TOKEN_HADAMARD, "@", "@"},
     {TOKEN_MULTIPLICATION, "*", "*"},
     {TOKEN_DIVISION, "/", "/"},
 };
@@ -110,14 +115,15 @@ lex_token token_regex_relation[] = {
     {TOKEN_BIT, "bit", "bit"},
     {TOKEN_MAIN, "main", "main"},
     {TOKEN_RETURN, "return", "return"},
+    {TOKEN_BARRIER, "barrier", "barrier"},
+    {TOKEN_CPHASE, "cph", "cph"},
+    {TOKEN_PI, "pi", "pi"},
     {TOKEN_NUMBER, "[0-9]+", NULL},
     {TOKEN_AND, "&&", "&&"},
     {TOKEN_OR, "\\|\\|", "||"},
     {TOKEN_EQUAL, "==", "=="},
     {TOKEN_NOT_EQUAL, "!=", "!="},
-    {TOKEN_LESS_THAN, "<", "<"},
     {TOKEN_LESS_THAN_EQUAL, "<=", "<="},
-    {TOKEN_GREATER_THAN, ">", ">"},
     {TOKEN_GREATER_THAN_EQUAL, ">=", ">="},
     {TOKEN_ID, "[a-zA-Z_][a-zA-Z_0-9]*", NULL},
 };
@@ -126,12 +132,14 @@ enum STATEMENT_TYPE {
     STATEMENT_RETURN,
     STATEMENT_DECLARATION,
     STATEMENT_EXPRESSION,
+    STATEMENT_BARRIER,
 };
 enum FACTOR_TYPE {
     FACTOR_EXPRESSION,
     FACTOR_IDENTIFIER,
     FACTOR_NUMBER,
     FACTOR_UNOP,
+    FACTOR_CPHASE,
 };
 
 
@@ -143,6 +151,13 @@ typedef struct BinOp{
     struct factor *rFactor;
 } BinOp;
 
+typedef struct cphase{
+    struct factor *lFactor;
+    struct factor *rFactor;
+    bool is_cphase;
+    char *phase;
+} cphase;
+
 typedef struct UnOp{
     lex_token *operation;
 } UnOp;
@@ -151,6 +166,7 @@ typedef struct factor {
     char value;
     int factor_type;
     char *identifier;
+    char *position;
     struct expression *expression;
     struct factor *factor;
     lex_token *operation;
@@ -159,6 +175,7 @@ typedef struct factor {
 typedef struct term {
     struct factor *factor;
     BinOp *binop;
+    cphase *cphase;
     bool is_term;
 } term;
 typedef struct expression {
@@ -189,6 +206,7 @@ typedef struct function {
 } function;
 typedef struct program{
     struct function *function;
+    variable_cache variables;
     bool is_program;
 } program;
 
@@ -196,6 +214,7 @@ bool is_unary_operator(lex_token token)
 {
     return token.token_type == TOKEN_NEG
         || token.token_type == TOKEN_BITWISE_COMPLEMENT
+        || token.token_type == TOKEN_HADAMARD
         || token.token_type == TOKEN_NEGATION;
 }
 

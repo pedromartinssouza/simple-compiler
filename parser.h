@@ -7,6 +7,7 @@
 
 variable_cache cache;
 
+cphase *parse_cphase(lex_token_list *list_of_tokens, int *index);
 factor *parse_factor(lex_token_list *list_of_tokens, int *index);
 term *parse_term(lex_token_list *list_of_tokens, int *index);
 expression *parse_expression(lex_token_list *list_of_tokens, int *index);
@@ -43,9 +44,7 @@ expression *parse_expression(lex_token_list *list_of_tokens, int *index)
             list_of_tokens->token_list[local_index].token_type == TOKEN_OR ||
             list_of_tokens->token_list[local_index].token_type == TOKEN_EQUAL ||
             list_of_tokens->token_list[local_index].token_type == TOKEN_NOT_EQUAL ||
-            list_of_tokens->token_list[local_index].token_type == TOKEN_LESS_THAN ||
             list_of_tokens->token_list[local_index].token_type == TOKEN_LESS_THAN_EQUAL ||
-            list_of_tokens->token_list[local_index].token_type == TOKEN_GREATER_THAN ||
             list_of_tokens->token_list[local_index].token_type == TOKEN_GREATER_THAN_EQUAL 
         )
         {
@@ -140,6 +139,34 @@ term *parse_term(lex_token_list *list_of_tokens, int *index)
             previous_binop->rTerm->binop->rFactor = malloc(sizeof(factor));
             previous_binop = copy_binop(t->binop);
         }
+        
+        if (list_of_tokens->token_list[local_index].token_type == TOKEN_CPHASE)
+        {
+            cphase *c = malloc(sizeof(cphase));
+            c = parse_cphase(list_of_tokens, &local_index);
+            if (c->is_cphase)
+            {
+                t->binop = malloc(sizeof(BinOp));
+                t->binop->lFactor = malloc(sizeof(factor));
+                t->binop->rFactor = malloc(sizeof(factor));
+                t->binop->lFactor = f;
+                t->binop->rFactor = parse_factor(list_of_tokens, &local_index);
+
+                if (t->binop->rFactor->is_factor)
+                {
+                    t->factor = NULL;
+                    t->binop->operation = malloc(sizeof(lex_token));
+                    t->binop->operation->token_type = TOKEN_CPHASE;
+                    t->binop->operation->value = c->phase;
+                    t->binop->rTerm = NULL;
+                    t->binop->lTerm = NULL;
+                    t->is_term = true;
+                    *index = local_index;
+                    return t;
+                    return t;
+                }
+            }
+        }
         t->is_term = true;
         *index = local_index;
         return t;
@@ -148,16 +175,57 @@ term *parse_term(lex_token_list *list_of_tokens, int *index)
     return t;
 }
 
+cphase *parse_cphase(lex_token_list *list_of_tokens, int *index)
+{
+    int local_index = *index;
+    cphase *c = malloc(sizeof(cphase));
+    c->lFactor = NULL;
+    c->rFactor = NULL;
+    c->phase = NULL;
+
+    if (list_of_tokens->token_list[local_index].token_type == TOKEN_CPHASE)
+    {
+        local_index++;
+        if (list_of_tokens->token_list[local_index].token_type == TOKEN_LPAREN)
+        {
+            local_index++;
+            if (list_of_tokens->token_list[local_index].token_type == TOKEN_PI)
+            {
+                local_index++;
+                if (list_of_tokens->token_list[local_index].token_type == TOKEN_DIVISION)
+                {
+                    local_index++;
+                    if(list_of_tokens->token_list[local_index].token_type == TOKEN_NUMBER)
+                    {
+                        int phase = atoi(list_of_tokens->token_list[local_index].value);
+                        local_index++;
+                        if (list_of_tokens->token_list[local_index].token_type == TOKEN_RPAREN)
+                        {
+                            local_index++;
+                            c->phase = malloc(sizeof(char) * 10);
+                            c->is_cphase = true;
+                            sprintf(c->phase, "pi/%d", phase);
+                            *index = local_index;
+                            return c;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 factor *parse_factor(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     factor *f = malloc(sizeof(factor));
     f->expression = NULL;
+    f->position = NULL;
     f->factor = NULL;
     f->operation = NULL;
     f->is_factor = false;
 
-    // factor -> "(" <expression> ")" | <UnOp> <factor> | <digit>
+    // factor -> "(" <expression> ")" 
     if (list_of_tokens->token_list[local_index].token_type == TOKEN_LPAREN)
     {
         local_index++;
@@ -182,6 +250,9 @@ factor *parse_factor(lex_token_list *list_of_tokens, int *index)
         f->factor = parse_factor(list_of_tokens, &local_index);
         if (f->factor->is_factor)
         {
+            f->expression = NULL;
+            f->value = '\0';
+            f->identifier = NULL;
             f->is_factor = true;
             f->factor_type = FACTOR_UNOP;
             *index = local_index;
@@ -198,11 +269,36 @@ factor *parse_factor(lex_token_list *list_of_tokens, int *index)
         *index = local_index;
         return f;
     }
+    // factor -> <id> [ "["<number> "]" ]
+    else if (list_of_tokens->token_list[local_index].token_type == TOKEN_ID && list_of_tokens->token_list[local_index + 1].token_type == TOKEN_LBRACK)
+    {
+        f->is_factor = true;
+        f->identifier = list_of_tokens->token_list[local_index].value;
+        f->value = '\0';
+        f->factor_type = FACTOR_IDENTIFIER;
+        local_index++;
+        if (list_of_tokens->token_list[local_index].token_type == TOKEN_LBRACK)
+        {
+            local_index++;
+            if (list_of_tokens->token_list[local_index].token_type == TOKEN_NUMBER)
+            {
+                f->position = list_of_tokens->token_list[local_index].value;
+                local_index++;
+                if (list_of_tokens->token_list[local_index].token_type == TOKEN_RBRACK)
+                {
+                    local_index++;
+                    *index = local_index;
+                    return f;
+                }
+            }
+        }
+    }
     // factor -> <id> "=" <expression>
     else if (list_of_tokens->token_list[local_index].token_type == TOKEN_ID)
     {
         f->is_factor = true;
         f->identifier = list_of_tokens->token_list[local_index].value;
+        f->value = '\0';
         f->factor_type = FACTOR_IDENTIFIER;
         local_index++;
         if (list_of_tokens->token_list[local_index].token_type == TOKEN_ASSIGNMENT)
@@ -227,6 +323,7 @@ statement* parse_statement(lex_token_list *list_of_tokens, int *index)
 {
     int local_index = *index;
     statement *stmt = malloc(sizeof(statement));
+    // <statement> ::= "return" <expression> ";" 
     if (list_of_tokens->token_list[local_index].token_type == TOKEN_RETURN)
     {
         local_index++;
@@ -241,6 +338,20 @@ statement* parse_statement(lex_token_list *list_of_tokens, int *index)
                 stmt->statement_type = STATEMENT_RETURN;
                 return stmt;
             }
+        }
+    }
+    // <statement> ::= "barrier" ";" 
+    else if (list_of_tokens->token_list[local_index].token_type == TOKEN_BARRIER) {
+        local_index++;
+        if (list_of_tokens->token_list[local_index].token_type == TOKEN_SEMICOLON)
+        {
+            local_index++;
+            *index = local_index;
+            stmt->expression = NULL;
+            stmt->identifier = NULL;
+            stmt->is_statement = true;
+            stmt->statement_type = STATEMENT_BARRIER;
+            return stmt;
         }
     }
     else if (list_of_tokens->token_list[local_index].token_type == TOKEN_INT || 
@@ -376,7 +487,10 @@ bool parse_all_statements(lex_token_list *list_of_tokens, int *index, function *
     statement *stmt = parse_statement(list_of_tokens, &local_index);
     if (stmt->is_statement)
     {
-        func->statement = realloc(func->statement, sizeof(statement) * (func->statement_count + 1));
+        if (func->statement_count == 0)
+            func->statement = malloc(sizeof(statement));
+        else
+            func->statement = realloc(func->statement, sizeof(statement) * (func->statement_count + 1));
         func->statement[func->statement_count] = *stmt;
         func->statement[func->statement_count].is_statement = true;
         func->statement_count++;
@@ -434,6 +548,7 @@ program* parse_program(lex_token_list *list_of_tokens, int *index)
     prog->function = parse_function(list_of_tokens, &local_index);
     if (prog->function->is_function)
     {
+        prog->variables = cache;
         prog->is_program = true;
         *index = local_index;
         return prog;
